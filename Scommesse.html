@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GOAT Bet - Scommesse Interne</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <style>
+        :root {
+            --primary-color: #1a237e;
+            --secondary-color: #4caf50;
+            --background-color: #f5f5f5;
+            --card-background: #ffffff;
+        }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: var(--background-color);
+            color: #333;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        header {
+            background-color: var(--primary-color);
+            color: white;
+            padding: 20px 0;
+            text-align: center;
+        }
+        h1 {
+            margin: 0;
+            font-size: 2.5em;
+        }
+        #budget {
+            font-size: 1.2em;
+            font-weight: bold;
+            color: var(--secondary-color);
+            margin: 20px 0;
+            text-align: center;
+        }
+        .betting-table {
+            background-color: var(--card-background);
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            overflow: hidden;
+            margin-bottom: 20px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        th, td {
+            padding: 15px;
+            text-align: left;
+            border-bottom: 1px solid #e0e0e0;
+        }
+        th {
+            background-color: var(--primary-color);
+            color: white;
+        }
+        .odds {
+            font-weight: bold;
+            color: var(--primary-color);
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+        .odds:hover {
+            background-color: #e8eaf6;
+        }
+        .event-type {
+            font-weight: bold;
+            background-color: #e8eaf6;
+        }
+        #bet-slip {
+            background-color: var(--card-background);
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            padding: 20px;
+            margin-top: 20px;
+        }
+        #bet-slip h3 {
+            margin-top: 0;
+            color: var(--primary-color);
+        }
+        #selected-bet {
+            margin-bottom: 15px;
+            font-weight: bold;
+        }
+        #bet-amount {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 15px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 1em;
+        }
+        #place-bet {
+            background-color: var(--secondary-color);
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            cursor: pointer;
+            border-radius: 4px;
+            font-size: 1em;
+            transition: background-color 0.3s ease;
+            width: 100%;
+        }
+        #place-bet:hover {
+            background-color: #45a049;
+        }
+        @media (max-width: 768px) {
+            .container {
+                padding: 10px;
+            }
+            h1 {
+                font-size: 2em;
+            }
+            th, td {
+                padding: 10px;
+            }
+        }
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+        .pulse {
+            animation: pulse 0.5s;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>GOAT Bet - Scommesse Interne</h1>
+    </header>
+    <div class="container">
+        <div id="budget">Budget: €100.00</div>
+        
+        <div class="betting-table">
+            <table id="events-table">
+                <tr>
+                    <th>Nome</th>
+                    <th>Quota</th>
+                </tr>
+                <tr class="event-type">
+                    <td colspan="2">Chi sarà il prossimo a lasciare GOAT?</td>
+                </tr>
+                <tr><td>Donatella</td><td class="odds" data-person="Donatella">2.50</td></tr>
+                <tr><td>Nico</td><td class="odds" data-person="Nico">3.00</td></tr>
+                <tr><td>Giuseppe</td><td class="odds" data-person="Giuseppe">3.50</td></tr>
+                <tr><td>Sara</td><td class="odds" data-person="Sara">4.50</td></tr>
+                <tr><td>Andrea</td><td class="odds" data-person="Andrea">5.00</td></tr>
+                <tr><td>Maurizio</td><td class="odds" data-person="Maurizio">5.50</td></tr>
+                <tr><td>Gianni</td><td class="odds" data-person="Gianni">7.00</td></tr>
+                <tr><td>Alessia</td><td class="odds" data-person="Alessia">8.00</td></tr>
+                <tr><td>Davide</td><td class="odds" data-person="Davide">10.00</td></tr>
+                <tr><td>Francesco</td><td class="odds" data-person="Francesco">11.00</td></tr>
+                <tr><td>Mike</td><td class="odds" data-person="Mike">15.00</td></tr>
+                <tr><td>Siria</td><td class="odds" data-person="Siria">18.00</td></tr>
+            </table>
+        </div>
+
+        <div id="bet-slip">
+            <h3>La tua scommessa</h3>
+            <div id="selected-bet"></div>
+            <input type="number" id="bet-amount" placeholder="Importo scommessa" min="1" max="100" step="0.01">
+            <button id="place-bet">Piazza scommessa</button>
+        </div>
+    </div>
+
+    <script>
+        const { jsPDF } = window.jspdf;
+        let budget = 100;
+        let selectedBet = null;
+
+        document.querySelectorAll('.odds').forEach(odd => {
+            odd.addEventListener('click', function() {
+                const person = this.getAttribute('data-person');
+                const odds = this.textContent;
+                selectedBet = { person, odds };
+                document.getElementById('selected-bet').textContent = `${person} lascerà GOAT per primo (Quota: ${odds})`;
+                this.classList.add('pulse');
+                setTimeout(() => this.classList.remove('pulse'), 500);
+            });
+        });
+
+        document.getElementById('place-bet').addEventListener('click', function() {
+            const betAmount = parseFloat(document.getElementById('bet-amount').value);
+            if (selectedBet && betAmount && betAmount <= budget) {
+                budget -= betAmount;
+                const potentialWin = betAmount * parseFloat(selectedBet.odds);
+                
+                // Genera PDF migliorato con nuovo logo
+                const doc = new jsPDF();
+                
+                
+                // Titolo
+                doc.setFontSize(16);
+                doc.text('SIMULAZIONE DI GIOCATA', 10, 40);
+                
+                // Linea separatrice
+                doc.setLineWidth(0.5);
+                doc.line(10, 45, 200, 45);
+                
+                // Informazioni sulla scommessa
+                doc.setFontSize(12);
+                const currentDate = new Date();
+                doc.text(`Data: ${currentDate.toLocaleDateString()} ${currentDate.toLocaleTimeString()}`, 10, 55);
+                doc.text('GOAT > Scommesse Interne', 10, 65);
+                doc.text(`${selectedBet.person} lascerà GOAT per primo`, 10, 75);
+                doc.text(`Quota: ${selectedBet.odds}`, 150, 75);
+                
+                // Linea separatrice
+                doc.line(10, 80, 200, 80);
+                
+                // Dettagli finanziari
+                doc.text(`Importo: ${betAmount.toFixed(2)} €`, 10, 90);
+                doc.text(`Quota Totale: ${selectedBet.odds}`, 10, 100);
+                doc.text(`VINCITA: ${potentialWin.toFixed(2)} €`, 10, 110);
+                
+                // Avviso legale
+                doc.setFontSize(8);
+                doc.text('Il Gioco è vietato ai minori di anni 18. Il Gioco può causare dipendenza patologica. Gioca responsabilmente.', 10, 130, {maxWidth: 180});
+                
+                doc.save('scommessa_goat.pdf');
+
+                document.getElementById('budget').textContent = `Budget: €${budget.toFixed(2)}`;
+                document.getElementById('bet-amount').value = '';
+                document.getElementById('selected-bet').textContent = '';
+                selectedBet = null;
+                
+                this.classList.add('pulse');
+                setTimeout(() => this.classList.remove('pulse'), 500);
+            } else if (betAmount > budget) {
+                alert('Saldo insufficiente per questa scommessa!');
+            } else {
+                alert('Seleziona una persona e inserisci un importo valido per la scommessa.');
+            }
+        });
+    </script>
+</body>
+</html>
